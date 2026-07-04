@@ -60,6 +60,7 @@ function makePack(items: Array<{ id: string; audio?: string; bonusAudio?: string
 let ctx: MockAudioContext
 let speak: ReturnType<typeof vi.fn>
 let cancel: ReturnType<typeof vi.fn>
+let synthState: { speaking: boolean; pending: boolean }
 
 beforeEach(() => {
   ctx = new MockAudioContext()
@@ -69,7 +70,19 @@ beforeEach(() => {
   )
   speak = vi.fn()
   cancel = vi.fn()
-  vi.stubGlobal('speechSynthesis', { speak, cancel, getVoices: () => [] })
+  synthState = { speaking: false, pending: false }
+  vi.stubGlobal('speechSynthesis', {
+    speak,
+    cancel,
+    resume: vi.fn(),
+    getVoices: () => [],
+    get speaking() {
+      return synthState.speaking
+    },
+    get pending() {
+      return synthState.pending
+    },
+  })
   vi.stubGlobal(
     'SpeechSynthesisUtterance',
     class {
@@ -100,6 +113,15 @@ describe('AudioEngine', () => {
     expect(ctx.sources[0].start).toHaveBeenCalled()
   })
 
+  it('unlock starts one muted utterance to unlock iOS speech synthesis', () => {
+    const engine = new AudioEngine()
+    engine.unlock()
+    expect(speak).toHaveBeenCalledTimes(1)
+    expect((speak.mock.calls[0][0] as { volume: number }).volume).toBe(0)
+    engine.unlock() // only once, not on every gesture
+    expect(speak).toHaveBeenCalledTimes(1)
+  })
+
   it('loadPack decodes declared files and tolerates missing ones per item', async () => {
     const engine = new AudioEngine()
     engine.unlock()
@@ -117,6 +139,7 @@ describe('AudioEngine', () => {
     await engine.loadPack(pack)
 
     ctx.sources = []
+    speak.mockClear()
     engine.sayItem(pack.items[0], 'primary') // has a decoded buffer → plays it
     expect(ctx.sources).toHaveLength(1)
     expect(speak).not.toHaveBeenCalled()
@@ -142,8 +165,27 @@ describe('AudioEngine', () => {
     engine.sayItem(pack.items[0], 'primary')
     engine.sayItem(pack.items[1], 'primary')
     expect(ctx.sources[0].stop).toHaveBeenCalled()
-    expect(cancel).toHaveBeenCalled()
     expect(ctx.sources).toHaveLength(2)
+    // synth was idle the whole time — an idle cancel() would poison iOS TTS
+    expect(cancel).not.toHaveBeenCalled()
+  })
+
+  it('cancels a busy synth and defers the next utterance (iOS drop workaround)', () => {
+    vi.useFakeTimers()
+    try {
+      const engine = new AudioEngine()
+      engine.unlock()
+      speak.mockClear()
+      synthState.speaking = true // something is being spoken right now
+      engine.say('next')
+      expect(cancel).toHaveBeenCalled()
+      expect(speak).not.toHaveBeenCalled() // not synchronously after cancel()
+      vi.advanceTimersByTime(60)
+      expect(speak).toHaveBeenCalledTimes(1)
+      expect((speak.mock.calls[0][0] as { text: string }).text).toBe('next')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('uses bonus audio/label for bonus taps', async () => {
@@ -159,6 +201,7 @@ describe('AudioEngine', () => {
     const pack = makePack([{ id: 'cow', audio: '/cow.mp3', bonusAudio: '/cow-sound.mp3' }])
     pack.items[0].bonusLabel = 'Moo!'
     await engine.loadPack(pack)
+    speak.mockClear()
 
     engine.sayItem(pack.items[0], 'primary') // no recording → TTS "cow"
     expect(speak).toHaveBeenCalledTimes(1)
@@ -173,6 +216,7 @@ describe('AudioEngine', () => {
   it('setVolume drives the master gain and TTS utterance volume', () => {
     const engine = new AudioEngine()
     engine.unlock()
+    speak.mockClear()
     engine.setVolume(0.4)
     engine.say('hello')
     expect((speak.mock.calls[0][0] as { volume: number }).volume, 'utterance volume').toBe(0.4)

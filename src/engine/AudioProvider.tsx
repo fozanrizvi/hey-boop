@@ -18,12 +18,24 @@ export class AudioEngine {
   private buffers = new Map<string, AudioBuffer>()
   private currentVoice: AudioBufferSourceNode | null = null
   private volume = 1
+  private ttsUnlocked = false
+  private pendingSpeakTimer: number | null = null
 
   /**
    * Must be called synchronously inside a user gesture (the pack-card tap on
    * the home screen) — iOS Safari refuses to start audio otherwise.
    */
   unlock(): void {
+    // Route as media playback so the iOS hardware/Control Center silent
+    // switch does not mute Web Audio (Safari 16.4+; harmless elsewhere).
+    const nav = navigator as Navigator & { audioSession?: { type: string } }
+    if (nav.audioSession) {
+      try {
+        nav.audioSession.type = 'playback'
+      } catch {
+        // older iOS — silent switch will mute Web Audio, nothing we can do
+      }
+    }
     if (!this.ctx) {
       const Ctor =
         window.AudioContext ??
@@ -34,19 +46,30 @@ export class AudioEngine {
       this.master.gain.value = this.volume
       this.master.connect(this.ctx.destination)
     }
-    if (this.ctx.state === 'suspended') void this.ctx.resume()
+    if (this.ctx.state !== 'running') void this.ctx.resume()
     // Playing one silent sample inside the gesture is what actually unlocks iOS.
     const silent = this.ctx.createBufferSource()
     silent.buffer = this.ctx.createBuffer(1, 1, 22050)
     silent.connect(this.master!)
     silent.start(0)
-    // Voices load lazily on iOS; touching the list now warms it up.
-    if ('speechSynthesis' in window) window.speechSynthesis.getVoices()
+    // Speech synthesis needs its own gesture unlock on iOS: start one muted
+    // utterance now so later speak() calls (from effects/timeouts) work.
+    if (!this.ttsUnlocked && 'speechSynthesis' in window) {
+      this.ttsUnlocked = true
+      const muted = new SpeechSynthesisUtterance(' ')
+      muted.volume = 0
+      window.speechSynthesis.speak(muted)
+      // Voices load lazily on iOS; touching the list now warms it up.
+      window.speechSynthesis.getVoices()
+    }
   }
 
-  /** iOS suspends the context when the app is backgrounded; call from any gesture. */
+  /**
+   * iOS suspends (or non-standardly "interrupts") the context when the app is
+   * backgrounded or a call comes in; call from any gesture.
+   */
   resumeIfSuspended(): void {
-    if (this.ctx && this.ctx.state === 'suspended') void this.ctx.resume()
+    if (this.ctx && this.ctx.state !== 'running') void this.ctx.resume()
   }
 
   setVolume(volume: number): void {
@@ -117,16 +140,38 @@ export class AudioEngine {
       return
     }
     if (!('speechSynthesis' in window)) return
+    const synth = window.speechSynthesis
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.rate = 0.85
     utterance.pitch = 1.05
     utterance.volume = this.volume
     const voice = this.pickVoice()
     if (voice) utterance.voice = voice
-    window.speechSynthesis.speak(utterance)
+    const start = () => {
+      this.pendingSpeakTimer = null
+      try {
+        synth.resume() // iOS can wedge in a paused state; resume is a no-op otherwise
+      } catch {
+        // not resumable — speak anyway
+      }
+      synth.speak(utterance)
+    }
+    if (this.cancelledSynthJustNow) {
+      // iOS silently drops a speak() issued synchronously after cancel().
+      this.cancelledSynthJustNow = false
+      this.pendingSpeakTimer = window.setTimeout(start, 60)
+    } else {
+      start()
+    }
   }
 
+  private cancelledSynthJustNow = false
+
   stopVoice(): void {
+    if (this.pendingSpeakTimer !== null) {
+      window.clearTimeout(this.pendingSpeakTimer)
+      this.pendingSpeakTimer = null
+    }
     if (this.currentVoice) {
       try {
         this.currentVoice.stop()
@@ -135,7 +180,15 @@ export class AudioEngine {
       }
       this.currentVoice = null
     }
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+    if ('speechSynthesis' in window) {
+      const synth = window.speechSynthesis
+      // Cancel only when something is actually queued: an idle cancel() poisons
+      // the next speak() on iOS.
+      if (synth.speaking || synth.pending) {
+        synth.cancel()
+        this.cancelledSynthJustNow = true
+      }
+    }
   }
 
   private pickVoice(): SpeechSynthesisVoice | null {
