@@ -56,14 +56,21 @@ for (const [path, svg] of icons) {
 // device-width x device-height @ dpr for the apple-touch-startup-image media
 // queries in index.html.
 const SPLASH = [
-  [2048, 2732], // iPad Pro 12.9  @2  1024x1366
-  [1668, 2388], // iPad Pro 11    @2  834x1194
-  [1640, 2360], // iPad Air       @2  820x1180
-  [1620, 2160], // iPad 10.2      @2  810x1080
-  [1290, 2796], // iPhone Pro Max @3  430x932
-  [1179, 2556], // iPhone Pro     @3  393x852
-  [1170, 2532], // iPhone 12-14   @3  390x844
-  [828, 1792], //  iPhone XR/11   @2  414x896
+  [2064, 2752], // iPad Pro 13 M4    @2  1032x1376
+  [2048, 2732], // iPad Pro 12.9     @2  1024x1366
+  [1668, 2420], // iPad Pro 11 M4    @2  834x1210
+  [1668, 2388], // iPad Pro 11       @2  834x1194
+  [1668, 2224], // iPad Pro 10.5/Air3 @2 834x1112
+  [1640, 2360], // iPad Air 10.9     @2  820x1180
+  [1620, 2160], // iPad 10.2         @2  810x1080
+  [1536, 2048], // iPad 9.7/mini 5   @2  768x1024
+  [1488, 2266], // iPad mini 6/7     @2  744x1133
+  [1320, 2868], // iPhone 16 Pro Max @3  440x956
+  [1290, 2796], // iPhone Pro Max    @3  430x932
+  [1206, 2622], // iPhone 16 Pro     @3  402x874
+  [1179, 2556], // iPhone 14/15 Pro  @3  393x852
+  [1170, 2532], // iPhone 12-14      @3  390x844
+  [828, 1792], //  iPhone XR/11      @2  414x896
 ]
 for (const [w, h] of SPLASH) {
   await sharp(splashSvg(w, h)).png().toFile(`public/splash/splash-${w}x${h}.png`)
