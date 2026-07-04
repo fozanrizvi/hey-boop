@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useAudio } from '../engine/AudioProvider'
+import { ParentGate } from '../engine/ParentGate'
 import { packs } from '../packs'
 import type { ContentPack } from '../engine/types'
 import { BoopMascot } from '../assets/svg/BoopMascot'
@@ -8,6 +9,7 @@ const CARD_COLORS = ['#FF6B6B', '#4ECDC4', '#8E7CC3', '#7BC950']
 
 export interface HomeProps {
   onSelectPack: (pack: ContentPack) => void
+  onOpenSettings: () => void
 }
 
 /**
@@ -15,7 +17,7 @@ export interface HomeProps {
  * unlock the AudioContext and start pre-decoding the pack's recordings
  * synchronously inside it, then enter play immediately.
  */
-export function Home({ onSelectPack }: HomeProps) {
+export function Home({ onSelectPack, onOpenSettings }: HomeProps) {
   const audio = useAudio()
 
   return (
@@ -50,6 +52,12 @@ export function Home({ onSelectPack }: HomeProps) {
           </button>
         ))}
       </main>
+
+      <div className="home-settings">
+        <ParentGate label="Hold for 3 seconds to open grown-up settings" onComplete={onOpenSettings}>
+          ⚙
+        </ParentGate>
+      </div>
     </div>
   )
 }

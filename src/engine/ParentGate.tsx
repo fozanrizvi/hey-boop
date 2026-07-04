@@ -33,7 +33,11 @@ export function ParentGate({ onComplete, holdMs = 3000, label, children }: Paren
   const start = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
       e.stopPropagation()
-      e.currentTarget.setPointerCapture(e.pointerId)
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId)
+      } catch {
+        // pointer already gone (or synthetic event) — hold still works via rAF
+      }
       setHolding(true)
       const startedAt = performance.now()
       const step = (now: number) => {
