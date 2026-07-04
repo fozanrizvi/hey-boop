@@ -1,0 +1,50 @@
+import type { ComponentType } from 'react'
+import {
+  CatIllustration,
+  CowIllustration,
+  DogIllustration,
+  DuckIllustration,
+  ElephantIllustration,
+  FrogIllustration,
+  HorseIllustration,
+  LionIllustration,
+  PigIllustration,
+  SheepIllustration,
+  type IllustrationProps,
+} from './Animals'
+import {
+  AppleIllustration,
+  BananaIllustration,
+  BroccoliIllustration,
+  CarrotIllustration,
+  CornIllustration,
+  GrapesIllustration,
+  OrangeIllustration,
+  StrawberryIllustration,
+  TomatoIllustration,
+  WatermelonIllustration,
+} from './Fruits'
+
+/** PackItem.image keys resolve here; pack data stays plain strings. */
+export const illustrations: Record<string, ComponentType<IllustrationProps>> = {
+  cow: CowIllustration,
+  dog: DogIllustration,
+  cat: CatIllustration,
+  duck: DuckIllustration,
+  sheep: SheepIllustration,
+  pig: PigIllustration,
+  horse: HorseIllustration,
+  frog: FrogIllustration,
+  lion: LionIllustration,
+  elephant: ElephantIllustration,
+  apple: AppleIllustration,
+  banana: BananaIllustration,
+  orange: OrangeIllustration,
+  strawberry: StrawberryIllustration,
+  grapes: GrapesIllustration,
+  watermelon: WatermelonIllustration,
+  carrot: CarrotIllustration,
+  tomato: TomatoIllustration,
+  broccoli: BroccoliIllustration,
+  corn: CornIllustration,
+}

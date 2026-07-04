@@ -5,6 +5,7 @@ import { useTapAdvance } from './useTapAdvance'
 import type { ContentPack, TapEvent, TapMode } from './types'
 import { BoopMascot } from '../assets/svg/BoopMascot'
 import { AppleIcon, StarIcon } from '../assets/svg/CountObjects'
+import { illustrations } from '../assets/svg/illustrations'
 
 const POP_SPRING = { type: 'spring', stiffness: 420, damping: 17, mass: 0.9 } as const
 const COUNT_STAGGER_S = 0.15
@@ -34,6 +35,7 @@ export function TapStage({ pack, mode = 'advance' }: TapStageProps) {
   const { item, index, stage, tapCount, tap } = useTapAdvance(pack, { mode, onEvent })
 
   const cheering = tapCount > 0 && tapCount % 5 === 0
+  const Illustration = item.image ? illustrations[item.image] : undefined
 
   return (
     <motion.div
@@ -52,7 +54,11 @@ export function TapStage({ pack, mode = 'advance' }: TapStageProps) {
           exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.12 } }}
           transition={POP_SPRING}
         >
+          {Illustration && <Illustration className="tap-stage-image" />}
           {item.display && <span className="tap-stage-glyph">{item.display}</span>}
+          {!Illustration && !item.display && (
+            <span className="tap-stage-glyph">{item.label}</span>
+          )}
           {item.countVisual !== undefined && (
             <div className="tap-stage-count" aria-hidden="true">
               {Array.from({ length: item.countVisual }, (_, i) => (

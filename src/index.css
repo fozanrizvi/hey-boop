@@ -206,6 +206,13 @@ button {
   text-shadow: 0 min(1.4vh, 1.4vw) 0 rgba(45, 42, 50, 0.22);
 }
 
+.tap-stage-image {
+  display: block;
+  width: min(64vw, 64vh);
+  height: min(64vw, 64vh);
+  filter: drop-shadow(0 min(1.2vh, 1.2vw) 0 rgba(45, 42, 50, 0.18));
+}
+
 .tap-stage-count {
   display: flex;
   flex-wrap: wrap;
