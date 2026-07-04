@@ -20,6 +20,8 @@ export class AudioEngine {
   private volume = 1
   private ttsUnlocked = false
   private pendingSpeakTimer: number | null = null
+  // Safari GCs queued utterances that nothing references, dropping the speech.
+  private currentUtterance: SpeechSynthesisUtterance | null = null
 
   /**
    * Must be called synchronously inside a user gesture (the pack-card tap on
@@ -153,6 +155,10 @@ export class AudioEngine {
         synth.resume() // iOS can wedge in a paused state; resume is a no-op otherwise
       } catch {
         // not resumable — speak anyway
+      }
+      this.currentUtterance = utterance
+      utterance.onend = () => {
+        if (this.currentUtterance === utterance) this.currentUtterance = null
       }
       synth.speak(utterance)
     }
