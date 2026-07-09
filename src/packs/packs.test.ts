@@ -3,6 +3,8 @@ import { packs } from './index'
 import { numbersPack } from './numbers'
 import { abcPack } from './abc'
 import { animalsPack } from './animals'
+import { shapesPack } from './shapes'
+import { vehiclesPack } from './vehicles'
 import { illustrations } from '../assets/svg/illustrations'
 
 const PALETTE = ['#FF6B6B', '#4ECDC4', '#FFD23F', '#8E7CC3', '#7BC950']
@@ -40,7 +42,8 @@ describe.each(packs.map((pack) => [pack.id, pack] as const))('pack schema: %s', 
 
   it('every image key resolves to an illustration component', () => {
     for (const item of pack.items) {
-      if (item.image) expect(illustrations[item.image], `missing SVG for ${item.image}`).toBeDefined()
+      if (item.image)
+        expect(illustrations[item.image], `missing SVG for ${item.image}`).toBeDefined()
     }
   })
 
@@ -86,6 +89,24 @@ describe('animals pack', () => {
     for (const item of animalsPack.items) {
       expect(item.bonusLabel, item.id).toBeTruthy()
       expect(item.bonusAudio).toBe(`/audio/animals/${item.id}-sound.mp3`)
+    }
+  })
+})
+
+describe('shapes pack', () => {
+  it('has eight shapes with no bonus tap', () => {
+    expect(shapesPack.items).toHaveLength(8)
+    for (const item of shapesPack.items) {
+      expect(item.bonusLabel).toBeUndefined()
+    }
+  })
+})
+
+describe('vehicles pack', () => {
+  it('every vehicle has a second-tap sound with a recorded-audio path', () => {
+    for (const item of vehiclesPack.items) {
+      expect(item.bonusLabel, item.id).toBeTruthy()
+      expect(item.bonusAudio).toBe(`/audio/vehicles/${item.id}-sound.mp3`)
     }
   })
 })

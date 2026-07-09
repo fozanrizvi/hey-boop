@@ -24,6 +24,26 @@ import {
   TomatoIllustration,
   WatermelonIllustration,
 } from './Fruits'
+import {
+  CircleIllustration,
+  DiamondIllustration,
+  HeartIllustration,
+  OvalIllustration,
+  RectangleIllustration,
+  SquareIllustration,
+  StarIllustration,
+  TriangleIllustration,
+} from './Shapes'
+import {
+  AirplaneIllustration,
+  BusIllustration,
+  CarIllustration,
+  FireTruckIllustration,
+  HelicopterIllustration,
+  PoliceCarIllustration,
+  TrainIllustration,
+  TruckIllustration,
+} from './Vehicles'
 
 /** PackItem.image keys resolve here; pack data stays plain strings. */
 export const illustrations: Record<string, ComponentType<IllustrationProps>> = {
@@ -47,4 +67,20 @@ export const illustrations: Record<string, ComponentType<IllustrationProps>> = {
   tomato: TomatoIllustration,
   broccoli: BroccoliIllustration,
   corn: CornIllustration,
+  circle: CircleIllustration,
+  square: SquareIllustration,
+  triangle: TriangleIllustration,
+  star: StarIllustration,
+  heart: HeartIllustration,
+  diamond: DiamondIllustration,
+  oval: OvalIllustration,
+  rectangle: RectangleIllustration,
+  car: CarIllustration,
+  truck: TruckIllustration,
+  bus: BusIllustration,
+  airplane: AirplaneIllustration,
+  train: TrainIllustration,
+  'fire-truck': FireTruckIllustration,
+  'police-car': PoliceCarIllustration,
+  helicopter: HelicopterIllustration,
 }
